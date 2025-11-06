@@ -17,7 +17,7 @@ function cookieOptions() {
     // In development, allow non-HTTPS for local testing
     secure: !isDev,
     // In development, use 'lax' to allow cross-site requests from local network
-    sameSite: (isDev ? 'lax' : 'strict') as const,
+    sameSite: (isDev ? 'lax' : 'strict') as 'lax' | 'strict',
     // Don't set domain in development to allow cookies to work across different IPs
     ...(isDev ? {} : { domain }),
     path: '/',

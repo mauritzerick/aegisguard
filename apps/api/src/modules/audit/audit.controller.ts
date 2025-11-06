@@ -31,9 +31,10 @@ export class AuditController {
     ]);
 
     // Get user emails for actorUserIds
-    const userIds = [...new Set(logs.map(log => log.actorUserId).filter(Boolean))];
+    const userIds: string[] = logs.map(log => log.actorUserId).filter((v): v is string => v != null);
+    const uniqueUserIds = [...new Set(userIds)];
     const users = await this.prisma.user.findMany({
-      where: { id: { in: userIds } },
+      where: { id: { in: uniqueUserIds } },
       select: { id: true, email: true },
     });
     const userMap = new Map(users.map(u => [u.id, u.email]));
