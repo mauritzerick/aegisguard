@@ -8,7 +8,8 @@
     "build": "npm --workspace apps/api run build && npm --workspace apps/web run build",
     "dev": "npm --workspace apps/api run start:dev & npm --workspace apps/web run dev",
     "lint": "eslint .",
-    "format": "prettier -w ."
+    "format": "prettier -w .",
+    "postinstall": "npm run -w apps/api prisma:generate"
   },
   "devDependencies": {
     "eslint": "^9.11.0",

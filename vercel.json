@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm ci && (cd apps/api && npm run prisma:generate && npm run build)",
+  "installCommand": "npm ci",
+  "framework": null,
+  "outputDirectory": "apps/api/dist"
+}
+
