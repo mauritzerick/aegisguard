@@ -292,7 +292,7 @@ export class IngestController {
     });
 
     if (cached && cached.expiresAt > new Date()) {
-      return cached.response as IngestResponse;
+      return cached.response as unknown as IngestResponse;
     }
 
     return null;

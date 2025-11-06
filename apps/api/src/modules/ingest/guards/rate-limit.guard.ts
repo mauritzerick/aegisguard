@@ -109,10 +109,11 @@ export class RateLimitGuard implements CanActivate {
     // Set expiry
     pipeline.expire(key, this.WINDOW * 2);
 
-    const results = await pipeline.exec();
+    const resultsRaw = await pipeline.exec();
+    const results = (resultsRaw ?? []) as any[];
 
     // Get count from zcard result
-    const count = results[1][1] as number;
+    const count = results[1]?.[1] as number ?? 0;
 
     return count < limit;
   }

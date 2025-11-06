@@ -132,23 +132,23 @@ export class DemoController {
       const message = selectedPatterns[Math.floor(Math.random() * selectedPatterns.length)];
 
       logs.push({
-        timestamp,
+        ts: timestamp,
         org_id: orgId,
         service,
         level,
         message,
-        attributes: JSON.stringify({
+        attrs: {
           request_id: `req_${i}_${Math.random().toString(36).substr(2, 9)}`,
           duration_ms: Math.floor(Math.random() * 500),
           user_id: Math.floor(Math.random() * 100),
-        }),
-        trace_id: null,
-        span_id: null,
+        },
+        trace_id: undefined,
+        span_id: undefined,
         host: 'demo-host',
-        source_ip: '127.0.0.1',
-        user_agent: 'Demo-Generator/1.0',
-        pii_scrubbed: false,
-        ingestion_id: `seed_${Date.now()}_${i}`,
+        ip: '127.0.0.1',
+        ua: 'Demo-Generator/1.0',
+        pii_masked: false,
+        ingest_id: `seed_${Date.now()}_${i}`,
       });
     }
 
@@ -233,7 +233,7 @@ export class DemoController {
       const remaining = actualCount - metrics.length;
       const defaultMetric = metricsToGenerate[0];
       for (let i = 0; i < remaining; i++) {
-        const timestamp = new Date(twoHoursAgo + ((metrics.length + i) * timeStep));
+        const timestamp: Date = new Date(twoHoursAgo + ((metrics.length + i) * timeStep));
         const service = services[Math.floor(Math.random() * services.length)];
         
         let value: number;
@@ -315,23 +315,23 @@ export class DemoController {
         org_id: orgId,
         trace_id: traceId,
         span_id: `span_${i}_root`,
-        parent_span_id: null,
+        parent_span_id: undefined,
         service,
         operation,
         kind: 'server',
         status,
         duration_ms: duration,
-        attrs: JSON.stringify({
+        attrs: {
           http_method: operation,
           http_status: status === 'error' ? 500 : 200,
           component: service,
-        }),
-        resource: JSON.stringify({
+        },
+        resource: {
           service_name: service,
           host: 'demo-host',
-        }),
-        events: JSON.stringify([]),
-        links: JSON.stringify([]),
+        },
+        events: [],
+        links: [],
       });
 
       // Create child span 30% of the time
@@ -348,14 +348,14 @@ export class DemoController {
           kind: 'client',
           status: Math.random() > 0.9 ? 'error' : 'ok',
           duration_ms: childDuration,
-          attrs: JSON.stringify({
+          attrs: {
             component: 'database',
-          }),
-          resource: JSON.stringify({
+          },
+          resource: {
             host: 'demo-host',
-          }),
-          events: JSON.stringify([]),
-          links: JSON.stringify([]),
+          },
+          events: [],
+          links: [],
         });
       }
     }

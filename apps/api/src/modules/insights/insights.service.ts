@@ -75,7 +75,7 @@ export class InsightsService {
       `;
 
       const result = await this.clickhouse.query(query);
-      return result;
+      return (Array.isArray((result) as any) ? (result as any[]) : []);
     } catch {
       return [];
     }

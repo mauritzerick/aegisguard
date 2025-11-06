@@ -15,7 +15,7 @@ export class InsightsController {
   async getInsights(
     @User() user: any,
     @Query('window') window?: string,
-  ) {
+  ): Promise<any> {
     const windowMinutes = parseInt(window || '60', 10);
     const orgId = user.organizationId || 1;
 
