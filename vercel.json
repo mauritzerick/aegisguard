@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm ci && npm run vercel-build",
+  "buildCommand": "npm ci && npm run -w apps/api vercel-build",
   "installCommand": "npm ci",
   "framework": null,
   "outputDirectory": "apps/api/dist"

@@ -8,6 +8,7 @@
     "start:dev": "ts-node-dev --respawn --transpile-only --files src/main.ts",
     "postinstall": "npx prisma generate --schema ../../prisma/schema.prisma",
     "build": "npx prisma generate --schema ../../prisma/schema.prisma && tsc -p tsconfig.build.json",
+    "vercel-build": "npx prisma generate --schema ../../prisma/schema.prisma && tsc -p tsconfig.build.json",
     "prisma:migrate": "cd ../.. && npx prisma migrate dev --name init --schema prisma/schema.prisma && cd apps/api",
     "prisma:generate": "npx prisma generate --schema ../../prisma/schema.prisma",
     "seed": "cd ../.. && npx ts-node prisma/seed.ts && cd apps/api"
