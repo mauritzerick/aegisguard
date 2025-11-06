@@ -1,0 +1,17 @@
+{
+  "name": "aegisguard",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm --workspace apps/api run build && npm --workspace apps/web run build",
+    "dev": "npm --workspace apps/api run start:dev & npm --workspace apps/web run dev",
+    "lint": "eslint .",
+    "format": "prettier -w ."
+  },
+  "devDependencies": {
+    "eslint": "^9.11.0",
+    "prettier": "^3.3.3"
+  }
+}

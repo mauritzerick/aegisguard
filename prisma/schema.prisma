@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String             @id @default(cuid())
+  email        String             @unique
+  passwordHash String
+  mfaEnabled   Boolean            @default(false)
+  mfaSecret    String?
+  roleId       String
+  role         Role               @relation(fields: [roleId], references: [id])
+  sessions     Session[]
+  apiKeys      ApiKey[]
+  ipAllows     IpAllow[]
+  auditLogs    AuditLog[]         @relation("AuditLogUser")
+  organizations OrganizationUser[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+model Role {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  users       User[]
+  permissions Permission[]
+}
+
+model Permission {
+  id    String  @id @default(cuid())
+  code  String  @unique
+  roles Role[]
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+  refreshTokenHash String
+  fingerprintHash  String
+  rotatesAt        DateTime
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+}
+
+model ApiKey {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  name      String
+  prefix    String
+  hash      String
+  scopes    String[]
+  lastFour  String
+  auditLogs AuditLog[]  @relation("AuditLogApiKey")
+  createdAt DateTime    @default(now())
+  revokedAt DateTime?
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorUserId   String?
+  actorApiKeyId String?
+  actorUser     User?    @relation("AuditLogUser", fields: [actorUserId], references: [id])
+  actorApiKey   ApiKey?  @relation("AuditLogApiKey", fields: [actorApiKeyId], references: [id])
+  action        String
+  resource      String
+  ip            String
+  userAgent     String
+  meta          Json
+  createdAt     DateTime @default(now())
+}
+
+model SecurityEvent {
+  id          String   @id @default(cuid())
+  source      String
+  type        String
+  severity    String
+  payload     Json
+  receivedAt  DateTime @default(now())
+  fingerprint String   @unique
+}
+
+model IpAllow {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  cidr   String
+}
+
+// ======================
+// OBSERVABILITY MODELS
+// ======================
+
+model Organization {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  apiKeyPrefix  String        @unique  // e.g., "obs_abc123"
+  apiKeyHash    String        // SHA-256 hash
+  secretHash    String        // For HMAC verification
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relations
+  users         OrganizationUser[]
+  monitors      Monitor[]
+  slos          SLO[]
+  usageDaily    UsageDaily[]
+  alerts        Alert[]
+  
+  @@index([slug])
+}
+
+model OrganizationUser {
+  id        String       @id @default(cuid())
+  orgId     String
+  userId    String
+  role      String       @default("member")  // owner, admin, member, viewer
+  createdAt DateTime     @default(now())
+  
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([orgId, userId])
+  @@index([userId])
+}
+
+model Monitor {
+  id            String       @id @default(cuid())
+  orgId         String
+  name          String
+  description   String?
+  type          String       // threshold, rate, error_ratio, burn_rate, anomaly
+  query         Json         // LogQL or PromQL query
+  condition     Json         // { operator: "gt", threshold: 100, window: "5m" }
+  alertChannels Json         // [{ type: "slack", url: "..." }, { type: "email", to: "..." }]
+  enabled       Boolean      @default(true)
+  silencedUntil DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  alerts        Alert[]
+  
+  @@index([orgId])
+  @@index([enabled])
+}
+
+model SLO {
+  id            String       @id @default(cuid())
+  orgId         String
+  name          String
+  description   String?
+  objective     Float        // e.g., 99.9 (for 99.9%)
+  window        String       // "30d", "7d", "28d"
+  sliQuery      Json         // Query to calculate SLI (e.g., success rate)
+  errorBudget   Float?       // Calculated error budget
+  status        String       @default("healthy")  // healthy, warning, critical
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  @@index([orgId])
+}
+
+model Alert {
+  id            String       @id @default(cuid())
+  orgId         String
+  monitorId     String
+  status        String       // firing, resolved
+  severity      String       // critical, warning, info
+  title         String
+  message       String
+  value         Float?
+  threshold     Float?
+  firedAt       DateTime     @default(now())
+  resolvedAt    DateTime?
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  monitor       Monitor      @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  
+  @@index([orgId])
+  @@index([monitorId])
+  @@index([status])
+  @@index([firedAt])
+}
+
+model UsageDaily {
+  id            String       @id @default(cuid())
+  date          DateTime     @db.Date
+  orgId         String
+  logsBytes     BigInt       @default(0)
+  logsCount     BigInt       @default(0)
+  metricsCount  BigInt       @default(0)
+  activeSeries  Int          @default(0)
+  spansCount    BigInt       @default(0)
+  rumEvents     BigInt       @default(0)
+  
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  @@unique([date, orgId])
+  @@index([orgId, date])
+}
+
+model IngestIdempotency {
+  id            String       @id @default(cuid())
+  orgId         String
+  idempotencyKey String
+  response      Json?        // Cached response
+  createdAt     DateTime     @default(now())
+  expiresAt     DateTime     // 24-hour expiry
+  
+  @@unique([orgId, idempotencyKey])
+  @@index([expiresAt])
+}
+
+model RateLimitBucket {
+  id            String       @id @default(cuid())
+  key           String       @unique  // e.g., "org:abc123:logs" or "ip:1.2.3.4"
+  tokens        Int          // Remaining tokens
+  lastRefill    DateTime     @default(now())
+  expiresAt     DateTime
+  
+  @@index([expiresAt])
+}

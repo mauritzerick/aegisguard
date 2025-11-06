@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+FROM node:20-alpine AS base
+WORKDIR /app
+
+FROM base AS deps
+COPY apps/web/package.json ./apps/web/package.json
+RUN npm i --prefix ./apps/web --ignore-scripts || true
+
+FROM base AS build
+COPY . .
+RUN npm --workspace apps/web run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/apps/web/dist ./apps/web/dist
+RUN npm i -g serve
+CMD ["serve", "-s", "apps/web/dist", "-l", "5173"]
+
+
+
+
+

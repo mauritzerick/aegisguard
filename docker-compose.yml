@@ -1,0 +1,79 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=aegis
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: aegis-clickhouse
+    ports:
+      - "8123:8123"  # HTTP interface
+      - "9000:9000"  # Native protocol
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse/init:/docker-entrypoint-initdb.d
+    environment:
+      CLICKHOUSE_DB: observability
+      CLICKHOUSE_USER: aegis
+      CLICKHOUSE_PASSWORD: aegis_ch_pass
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: aegis-timescale
+    ports:
+      - "5433:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+      - ./timescaledb/init:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_DB: metrics
+      POSTGRES_USER: aegis
+      POSTGRES_PASSWORD: aegis_ts_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegis -d metrics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.api
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile.web
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env.web
+    depends_on:
+      - api
+volumes:
+  pgdata:
+  clickhouse_data:
+  timescale_data:
