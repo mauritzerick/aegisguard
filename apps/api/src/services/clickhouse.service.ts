@@ -62,7 +62,7 @@ export interface RUMEvent {
 
 @Injectable()
 export class ClickHouseService implements OnModuleInit, OnModuleDestroy {
-  private client: ClickHouseClient;
+  private client!: ClickHouseClient;
 
   constructor(private configService: ConfigService) {}
 
