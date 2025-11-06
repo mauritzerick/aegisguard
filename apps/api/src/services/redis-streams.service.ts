@@ -16,7 +16,7 @@ export enum StreamName {
 
 @Injectable()
 export class RedisStreamsService implements OnModuleInit {
-  private redis: Redis;
+  private redis!: Redis;
   private consumerGroup = 'normalizer-workers';
 
   constructor(private configService: ConfigService) {}
