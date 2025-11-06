@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as geoip from 'geoip-lite';
-import * as UAParser from 'ua-parser-js';
+import UAParser from 'ua-parser-js';
 
 export interface GeoData {
   country: string;

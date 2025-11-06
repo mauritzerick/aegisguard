@@ -39,7 +39,7 @@ export class RedisStreamsService implements OnModuleInit {
       
       // Create consumer groups if they don't exist
       await this.createConsumerGroups();
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Redis Streams connection failed:', error.message);
     }
   }
@@ -53,9 +53,9 @@ export class RedisStreamsService implements OnModuleInit {
     for (const stream of streams) {
       try {
         // Create consumer group (starts from beginning of stream)
-        await this.redis.xgroup('CREATE', stream, this.consumerGroup, '0', 'MKSTREAM');
+        await this.redis.xgroup('CREATE', String(stream), this.consumerGroup, '0', 'MKSTREAM');
         console.log(`✅ Consumer group created for ${stream}`);
-      } catch (error) {
+      } catch (error: any) {
         // Group already exists or other error
         if (!error.message.includes('BUSYGROUP')) {
           console.error(`⚠️  Could not create consumer group for ${stream}:`, error.message);
@@ -79,12 +79,12 @@ export class RedisStreamsService implements OnModuleInit {
 
     // XADD returns the message ID
     const messageId = await this.redis.xadd(
-      stream,
+      String(stream),
       '*', // Auto-generate ID
       ...fields,
     );
 
-    return messageId;
+    return messageId || '';
   }
 
   /**
@@ -101,13 +101,14 @@ export class RedisStreamsService implements OnModuleInit {
       for (const [key, value] of Object.entries(data)) {
         fields.push(key, typeof value === 'string' ? value : JSON.stringify(value));
       }
-      pipeline.xadd(stream, '*', ...fields);
+      pipeline.xadd(String(stream), '*', ...fields);
     }
 
     const results = await pipeline.exec();
+    if (!results) return [];
     return results.map(([err, messageId]) => {
       if (err) throw err;
-      return messageId as string;
+      return (messageId as string) || '';
     });
   }
 
@@ -130,17 +131,19 @@ export class RedisStreamsService implements OnModuleInit {
       'BLOCK',
       blockMs,
       'STREAMS',
-      stream,
+      String(stream),
       '>', // Read only new messages
     );
 
-    if (!result || result.length === 0) {
+    if (!result || (Array.isArray(result) ? result.length : String(result ?? '').length) === 0) {
       return [];
     }
 
     const messages: StreamMessage[] = [];
-    for (const [, entries] of result) {
-      for (const [id, fields] of entries as any[]) {
+    const resultArray = Array.isArray(result as any) ? (result as any) : [result];
+    for (const [, entries] of resultArray) {
+      const entriesArray = Array.isArray(entries as any) ? (entries as any) : [entries];
+      for (const [id, fields] of entriesArray) {
         // Convert fields array to object
         const data: Record<string, any> = {};
         for (let i = 0; i < fields.length; i += 2) {
@@ -169,30 +172,31 @@ export class RedisStreamsService implements OnModuleInit {
    */
   async ack(stream: StreamName, ...messageIds: string[]): Promise<number> {
     if (messageIds.length === 0) return 0;
-    return await this.redis.xack(stream, this.consumerGroup, ...messageIds);
+    return await this.redis.xack(String(stream), this.consumerGroup, ...messageIds);
   }
 
   /**
    * Get stream info
    */
   async getStreamInfo(stream: StreamName): Promise<any> {
-    return await this.redis.xinfo('STREAM', stream);
+    return await this.redis.xinfo('STREAM', String(stream));
   }
 
   /**
    * Get consumer group info
    */
   async getConsumerGroupInfo(stream: StreamName): Promise<any> {
-    return await this.redis.xinfo('GROUPS', stream);
+    return await this.redis.xinfo('GROUPS', String(stream));
   }
 
   /**
    * Get pending messages count
    */
   async getPendingCount(stream: StreamName): Promise<number> {
-    const result = await this.redis.xpending(stream, this.consumerGroup);
+    const result = await this.redis.xpending(String(stream), this.consumerGroup);
     // Result: [count, minId, maxId, consumers]
-    return parseInt(result[0] || '0', 10);
+    const resultArray = Array.isArray(result as any) ? (result as any) : [];
+    return Number(resultArray[0]) || 0;
   }
 
   /**
@@ -206,7 +210,7 @@ export class RedisStreamsService implements OnModuleInit {
   ): Promise<StreamMessage[]> {
     // XAUTOCLAIM <stream> <group> <consumer> <min-idle-time> <start> COUNT <count>
     const result = await this.redis.xautoclaim(
-      stream,
+      String(stream),
       this.consumerGroup,
       consumerId,
       minIdleTime,
@@ -215,18 +219,20 @@ export class RedisStreamsService implements OnModuleInit {
       count,
     );
 
-    if (!result || result.length === 0) {
+    if (!result || (Array.isArray(result as any) ? (result as any).length : String(result ?? '').length) === 0) {
       return [];
     }
 
     const messages: StreamMessage[] = [];
-    const [, entries] = result;
+    const resultArray = Array.isArray(result as any) ? (result as any) : [result];
+    const [, entries] = resultArray;
 
-    if (!entries || entries.length === 0) {
+    if (!entries || (Array.isArray(entries as any) ? (entries as any).length : String(entries ?? '').length) === 0) {
       return [];
     }
 
-    for (const [id, fields] of entries as any[]) {
+    const entriesArray = Array.isArray(entries as any) ? (entries as any) : [entries];
+    for (const [id, fields] of entriesArray) {
       const data: Record<string, any> = {};
       for (let i = 0; i < fields.length; i += 2) {
         const key = fields[i];
@@ -248,21 +254,21 @@ export class RedisStreamsService implements OnModuleInit {
    * Trim stream to max length (prevent unbounded growth)
    */
   async trimStream(stream: StreamName, maxLength: number = 100000): Promise<number> {
-    return await this.redis.xtrim(stream, 'MAXLEN', '~', maxLength);
+    return await this.redis.xtrim(String(stream), 'MAXLEN', '~', maxLength);
   }
 
   /**
    * Get stream length
    */
   async getStreamLength(stream: StreamName): Promise<number> {
-    return await this.redis.xlen(stream);
+    return Number(await this.redis.xlen(String(stream))) || 0;
   }
 
   /**
    * Delete consumer from group
    */
   async deleteConsumer(stream: StreamName, consumerId: string): Promise<number> {
-    return await this.redis.xgroup('DELCONSUMER', stream, this.consumerGroup, consumerId);
+    return Number(await this.redis.xgroup('DELCONSUMER', String(stream), this.consumerGroup, consumerId)) || 0;
   }
 
   /**

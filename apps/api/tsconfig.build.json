@@ -3,7 +3,9 @@
   "compilerOptions": {
     "declaration": true,
     "sourceMap": false,
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
+    "skipLibCheck": true,
+    "strictPropertyInitialization": false
   },
   "exclude": ["node_modules", "dist", "test", "**/*.spec.ts"]
 }

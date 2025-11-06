@@ -19,7 +19,7 @@ export interface MetricQueryResult {
 
 @Injectable()
 export class TimescaleService implements OnModuleInit, OnModuleDestroy {
-  private pool: Pool;
+  private pool!: Pool;
 
   constructor(private configService: ConfigService) {}
 
