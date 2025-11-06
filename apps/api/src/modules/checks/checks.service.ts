@@ -35,9 +35,20 @@ export class ChecksService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    // Initialize with default checks
-    await this.initializeDefaultChecks();
-    this.logger.log('Synthetic checks service initialized');
+    // Don't initialize on Vercel (serverless functions don't support persistent state)
+    if (process.env.VERCEL) {
+      this.logger.log('Synthetic checks service disabled on Vercel (serverless)');
+      return;
+    }
+    
+    try {
+      // Initialize with default checks
+      await this.initializeDefaultChecks();
+      this.logger.log('Synthetic checks service initialized');
+    } catch (error: any) {
+      this.logger.error('Failed to initialize checks service:', (error instanceof Error) ? error.message : String(error));
+      // Don't throw - allow app to start even if checks initialization fails
+    }
   }
 
   private async initializeDefaultChecks() {

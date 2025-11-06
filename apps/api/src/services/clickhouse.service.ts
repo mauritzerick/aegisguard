@@ -87,7 +87,13 @@ export class ClickHouseService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.client.close();
+    try {
+      if (this.client) {
+        await this.client.close();
+      }
+    } catch (error: any) {
+      // Ignore disconnect errors
+    }
   }
 
   /**

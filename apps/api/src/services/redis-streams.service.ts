@@ -22,6 +22,12 @@ export class RedisStreamsService implements OnModuleInit {
   constructor(private configService: ConfigService) {}
 
   async onModuleInit() {
+    // Don't connect to Redis on Vercel if not configured (serverless functions)
+    if (process.env.VERCEL && !process.env.REDIS_HOST && !process.env.REDIS_URL) {
+      console.log('⏸️  Redis Streams disabled on Vercel (no Redis configured)');
+      return;
+    }
+    
     this.redis = new Redis({
       host: this.configService.get('REDIS_HOST', 'localhost'),
       port: this.configService.get('REDIS_PORT', 6379),
@@ -30,6 +36,8 @@ export class RedisStreamsService implements OnModuleInit {
         const delay = Math.min(times * 50, 2000);
         return delay;
       },
+      // Use Redis URL if provided (common on Vercel)
+      ...(process.env.REDIS_URL ? { url: process.env.REDIS_URL } : {}),
     });
 
     // Test connection
@@ -40,7 +48,8 @@ export class RedisStreamsService implements OnModuleInit {
       // Create consumer groups if they don't exist
       await this.createConsumerGroups();
     } catch (error: any) {
-      console.error('❌ Redis Streams connection failed:', error.message);
+      console.error('❌ Redis Streams connection failed:', (error instanceof Error) ? error.message : String(error));
+      // Don't throw - allow app to start even if Redis is unavailable
     }
   }
 
@@ -275,7 +284,13 @@ export class RedisStreamsService implements OnModuleInit {
    * Close Redis connection
    */
   async close() {
-    await this.redis.quit();
+    try {
+      if (this.redis) {
+        await this.redis.quit();
+      }
+    } catch (error: any) {
+      // Ignore disconnect errors
+    }
   }
 }
 

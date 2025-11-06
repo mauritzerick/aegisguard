@@ -16,10 +16,13 @@ interface LogEvent {
   attrs?: Record<string, any>;
 }
 
+// Disable WebSocket on Vercel (serverless functions don't support persistent connections)
+const wsPort = process.env.VERCEL ? undefined : (process.env.NODE_ENV === 'production' ? undefined : 3001);
+
 @Injectable()
-@WebSocketGateway(3001, { 
+@WebSocketGateway(wsPort, { 
   cors: { origin: 'http://localhost:5173', credentials: true },
-  transports: ['websocket']
+  transports: ['websocket'],
 })
 export class WsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

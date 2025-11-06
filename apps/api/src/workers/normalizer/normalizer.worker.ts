@@ -40,6 +40,12 @@ export class NormalizerWorker implements OnModuleInit {
   }
 
   async onModuleInit() {
+    // Don't start worker on Vercel (serverless functions don't support background workers)
+    if (process.env.VERCEL) {
+      console.log('⏸️  Normalizer Worker disabled on Vercel (serverless)');
+      return;
+    }
+    
     // Start worker if enabled
     const enabled = this.configService.get('NORMALIZER_ENABLED', 'true') === 'true';
     if (enabled) {

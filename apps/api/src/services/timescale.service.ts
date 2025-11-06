@@ -47,7 +47,13 @@ export class TimescaleService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.pool.end();
+    try {
+      if (this.pool) {
+        await this.pool.end();
+      }
+    } catch (error: any) {
+      // Ignore disconnect errors
+    }
   }
 
   /**

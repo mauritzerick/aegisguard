@@ -24,7 +24,13 @@ import { ChecksModule } from './modules/checks/checks.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    JwtModule.register({ global: true }),
+    JwtModule.registerAsync({
+      global: true,
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET || 'default-secret-change-in-production',
+        signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '5m' },
+      }),
+    }),
     AuthModule,
     ObservabilityModule,
     IngestModule,

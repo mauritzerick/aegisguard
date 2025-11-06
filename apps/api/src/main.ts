@@ -17,7 +17,11 @@ function getCorsOrigins(): string[] {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useWebSocketAdapter(new WsAdapter(app));
+  
+  // Only enable WebSocket adapter if not on Vercel (serverless doesn't support persistent connections)
+  if (!process.env.VERCEL) {
+    app.useWebSocketAdapter(new WsAdapter(app));
+  }
 
   app.use(helmet({
     contentSecurityPolicy: {
@@ -85,4 +89,7 @@ async function bootstrap() {
   console.log(`API listening on http://localhost:${port}`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('❌ Failed to start application:', error);
+  process.exit(1);
+});
