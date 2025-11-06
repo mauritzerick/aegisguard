@@ -94,7 +94,7 @@ export class NormalizerWorker implements OnModuleInit {
         if (messages.length > 0) {
           await this.processLogsBatch(messages);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error processing logs stream:', error.message);
         await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5s on error
       }
@@ -117,7 +117,7 @@ export class NormalizerWorker implements OnModuleInit {
         if (messages.length > 0) {
           await this.processMetricsBatch(messages);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error processing metrics stream:', error.message);
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
@@ -140,7 +140,7 @@ export class NormalizerWorker implements OnModuleInit {
         if (messages.length > 0) {
           await this.processTracesBatch(messages);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error processing traces stream:', error.message);
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
@@ -163,7 +163,7 @@ export class NormalizerWorker implements OnModuleInit {
         if (messages.length > 0) {
           await this.processRUMBatch(messages);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Error processing RUM stream:', error.message);
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
@@ -211,7 +211,7 @@ export class NormalizerWorker implements OnModuleInit {
         }
 
         messageIds.push(msg.id);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Failed to process log message:', error.message);
         // Still acknowledge to avoid reprocessing
         messageIds.push(msg.id);
@@ -233,7 +233,7 @@ export class NormalizerWorker implements OnModuleInit {
         }
 
         console.log(`✅ Processed ${logs.length} logs`);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Failed to write logs to ClickHouse:', error.message);
         // Don't acknowledge on write failure - retry later
         return;
@@ -274,7 +274,7 @@ export class NormalizerWorker implements OnModuleInit {
         }
 
         messageIds.push(msg.id);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Failed to process metric message:', error.message);
         messageIds.push(msg.id);
       }
@@ -292,7 +292,7 @@ export class NormalizerWorker implements OnModuleInit {
         }
 
         console.log(`✅ Processed ${metrics.length} metrics`);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Failed to write metrics to Timescale:', error.message);
         return;
       }
@@ -341,7 +341,7 @@ export class NormalizerWorker implements OnModuleInit {
         }
 
         messageIds.push(msg.id);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Failed to process trace message:', error.message);
         messageIds.push(msg.id);
       }
@@ -359,7 +359,7 @@ export class NormalizerWorker implements OnModuleInit {
         }
 
         console.log(`✅ Processed ${spans.length} spans`);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Failed to write spans to ClickHouse:', error.message);
         return;
       }
@@ -417,7 +417,7 @@ export class NormalizerWorker implements OnModuleInit {
         }
 
         messageIds.push(msg.id);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Failed to process RUM message:', error.message);
         messageIds.push(msg.id);
       }
@@ -435,7 +435,7 @@ export class NormalizerWorker implements OnModuleInit {
         }
 
         console.log(`✅ Processed ${events.length} RUM events`);
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ Failed to write RUM events to ClickHouse:', error.message);
         return;
       }
@@ -510,7 +510,7 @@ export class NormalizerWorker implements OnModuleInit {
           },
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Failed to update usage metrics:', error.message);
     }
   }
