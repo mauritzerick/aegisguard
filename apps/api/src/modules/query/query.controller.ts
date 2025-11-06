@@ -1,3 +1,11 @@
+/* __AUTO_TYPED_HELPERS_START__ */
+// Helpers to safely coerce unknown values used in this controller
+// (kept local to avoid changing global tsconfig strictness)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const asAny = (v: unknown): any => v as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toArray = <T = any>(v: unknown): T[] => Array.isArray(v) ? (v as T[]) : (v == null ? [] : [v as T]);
+/* __AUTO_TYPED_HELPERS_END__ */
 import {
   Controller,
   Post,
@@ -94,7 +102,7 @@ export class QueryController {
       });
 
       return {
-        logs: results.map((log: any) => ({
+        logs: toArray(results).map((log: any) => ({
           ts: log.ts,
           service: log.service,
           level: log.level,
@@ -104,7 +112,7 @@ export class QueryController {
           span_id: log.span_id || undefined,
           host: log.host || undefined,
         })),
-        total: results.length,
+        total: toArray(results).length,
         start: body.start,
         end: body.end,
       };
@@ -171,11 +179,11 @@ export class QueryController {
         service: parsed.service,
       });
 
-      console.log('Query results count:', results.length);
+      console.log('Query results count:', toArray(results).length);
 
       return {
         metric: parsed.metric,
-        results: results.map((r: any) => ({
+        results: toArray(results).map((r: any) => ({
           timestamp: r.bucket.toISOString(),
           value: parseFloat(r.value) || 0,
         })),
@@ -258,7 +266,7 @@ export class QueryController {
       });
 
       return {
-        traces: results.map((trace: any) => ({
+        traces: toArray(results).map((trace: any) => ({
           trace_id: trace.trace_id,
           start_time: trace.start_time,
           duration_ms: trace.total_duration_ms,
@@ -266,7 +274,7 @@ export class QueryController {
           services: Array.isArray(trace.services) ? trace.services : [],
           error_count: trace.error_count || 0,
         })),
-        total: results.length,
+        total: toArray(results).length,
       };
     } catch (error: any) {
       console.error('ClickHouse traces search error:', error.message);
@@ -299,22 +307,22 @@ export class QueryController {
     try {
       const spans = await this.clickhouse.getTrace(orgId, traceId);
 
-      if (spans.length === 0) {
+      if (toArray(spans).length === 0) {
         throw new Error('Trace not found');
       }
 
       // Calculate trace-level stats
-      const startTimes = spans.map((s: any) => new Date(s.ts).getTime());
-      const durations = spans.map((s: any) => s.duration_ms);
+      const startTimes = toArray(spans).map((s: any) => new Date(s.ts).getTime());
+      const durations = toArray(spans).map((s: any) => s.duration_ms);
       const minStart = Math.min(...startTimes);
-      const maxEnd = Math.max(...startTimes.map((t, i) => t + durations[i]));
+      const maxEnd = Math.max(...startTimes.map((t: any, i: number) => t + durations[i]));
 
       return {
         trace_id: traceId,
         start_time: new Date(minStart).toISOString(),
         end_time: new Date(maxEnd).toISOString(),
         duration_ms: maxEnd - minStart,
-        spans: spans.map((span: any) => ({
+        spans: toArray(spans).map((span: any) => ({
           span_id: span.span_id,
           parent_span_id: span.parent_span_id || undefined,
           service: span.service,
@@ -365,7 +373,7 @@ export class QueryController {
       });
 
       return {
-        events: results.map((event: any) => ({
+        events: toArray(results).map((event: any) => ({
           ts: event.ts,
           session_id: event.session_id,
           user_id: event.user_id || undefined,
@@ -378,7 +386,7 @@ export class QueryController {
           geo_city: event.geo_city || undefined,
           custom_attrs: event.custom_attrs ? JSON.parse(event.custom_attrs) : undefined,
         })),
-        total: results.length,
+        total: toArray(results).length,
       };
     } catch (error: any) {
       console.error('ClickHouse RUM search error:', error.message);
