@@ -155,7 +155,7 @@ export class DemoController {
     // Insert into ClickHouse
     try {
       await this.clickhouse.insertLogs(logs);
-    } catch (error) {
+    } catch (error: any) {
       // Silent fail for demo - ClickHouse might not be configured
       console.log('ClickHouse not available, skipping log insertion');
     }
@@ -363,7 +363,7 @@ export class DemoController {
     // Insert into ClickHouse
     try {
       await this.clickhouse.insertSpans(spans);
-    } catch (error) {
+    } catch (error: any) {
       console.log('ClickHouse not available, skipping trace insertion');
     }
 

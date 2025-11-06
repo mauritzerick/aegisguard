@@ -81,8 +81,8 @@ export class ClickHouseService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.client.ping();
       console.log('✅ ClickHouse connected successfully');
-    } catch (error) {
-      console.error('❌ ClickHouse connection failed:', error.message);
+    } catch (error: any) {
+      console.error('❌ ClickHouse connection failed:', (error instanceof Error) ? error.message : String(error));
     }
   }
 

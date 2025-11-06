@@ -41,8 +41,8 @@ export class TimescaleService implements OnModuleInit, OnModuleDestroy {
       await client.query('SELECT 1');
       client.release();
       console.log('✅ TimescaleDB connected successfully');
-    } catch (error) {
-      console.error('❌ TimescaleDB connection failed:', error.message);
+    } catch (error: any) {
+      console.error('❌ TimescaleDB connection failed:', (error instanceof Error) ? error.message : String(error));
     }
   }
 

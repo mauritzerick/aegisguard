@@ -50,8 +50,8 @@ export class InsightsService {
       const repeatedErrorInsight = this.detectRepeatedErrors(logs);
       if (repeatedErrorInsight) insights.push(repeatedErrorInsight);
 
-    } catch (error) {
-      console.error('Error generating insights:', error);
+    } catch (error: any) {
+      console.error('Error generating insights:', (error instanceof Error) ? error.message : String(error));
     }
 
     return insights;

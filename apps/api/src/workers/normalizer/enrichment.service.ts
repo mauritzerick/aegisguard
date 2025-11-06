@@ -48,8 +48,8 @@ export class EnrichmentService {
         timezone: geo.timezone || '',
         ll: geo.ll || [0, 0],
       };
-    } catch (error) {
-      console.error('GeoIP lookup failed:', error.message);
+    } catch (error: any) {
+      console.error('GeoIP lookup failed:', (error instanceof Error) ? error.message : String(error));
       return null;
     }
   }
@@ -74,8 +74,8 @@ export class EnrichmentService {
         device: device.model || '',
         deviceType: this.getDeviceType(device.type),
       };
-    } catch (error) {
-      console.error('User agent parsing failed:', error.message);
+    } catch (error: any) {
+      console.error('User agent parsing failed:', (error instanceof Error) ? error.message : String(error));
       return null;
     }
   }
